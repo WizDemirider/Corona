@@ -5,10 +5,14 @@ from .models import Code
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
-from logics import sendmail
+import requests, json
+from pygments import highlight, lexers, formatters
 
 def index(request):
-    return HttpResponse("Welcome!")
+    if request.user.is_authenticated:
+        return redirect('home')
+    else:
+        return redirect('login')
 
 def signupUser(request):
     if request.method == 'POST':
@@ -48,29 +52,57 @@ def logoutUser(request):
 
 @login_required
 def home(request):
-    codes = Code.objects
-    return render(request,'Authentication/home.html',{'code':codes,'f':False})
+    codes = Code.objects.all()
+    for c in codes:
+        lex = lexers.get_lexer_by_name(c.language.split()[0])
+        formatter = formatters.HtmlFormatter(noclasses=True)
+        c.h_code = highlight(c.code, lex, formatter)
+
+    return render(request,'home.html',{'codes':codes})
+
+@login_required
 def coding(request):
-    return render(request,'code/coding.html')
-def testout(request):#just to see if its working, to be altered
-    lang = request.POST.get("language",False)
-    code = request.POST.get("code",False)
-    ip = request.POST.get("input",False)
-    is_pub = request.POST.get("is_public",False)
-    if is_pub == "False":
-        is_pub = ""
-    email = request.POST.get("email",False)
-    c = Code()
-    c.language = lang
-    c.input = ip
-    c.output = ""
-    c.is_public = bool(is_pub)
-    c.code = code
-    c.save()
-    #put your compiler logic here.
-    comp = True#stores if compiler worked or not
-    if comp:
-        sendmail(email,User().username,'Success! Your code compiled','Your code succesfully compiled. Come and see if its the output you wanted!!')
-    else:
-        sendmail(email,User().username,'Oh no! Your code was compiled succesfully','Something went wrong. Come and check your code!')
-    return render(request,'code/test.html',{'lang':lang,'code':code,'ip':ip,'pub':is_pub})
+    if request.method == 'POST':
+        lang = request.POST.get("language","").split(':')
+        code = request.POST.get("code","")
+        ip = request.POST.get("input","")
+        is_pub = request.POST.get("is_public",False)
+
+        r = requests.post('https://api.judge0.com/submissions/', json={"source_code": code, "language_id": int(lang[0]), "stdin": ip})
+        data = json.loads(r.text)
+
+        c = Code()
+        c.language = lang[1]
+        c.language_id = int(lang[0])
+        c.stdin = ip
+        c.is_public = bool(is_pub)
+        c.code = code
+        c.owner = request.user
+        c.token = data['token']
+        c.save()
+        return redirect('test', c.pk)
+
+    r  = requests.get('https://api.judge0.com/languages/')
+    data = json.loads(r.text)
+    return render(request,'code/coding.html', {'languages': data})
+
+@login_required
+def testout(request, **kwargs):
+    pk = kwargs['pk']
+    c = Code.objects.get(pk=pk)
+    data = None
+
+    lex = lexers.get_lexer_by_name(c.language.split()[0])
+    formatter = formatters.HtmlFormatter(noclasses=True)
+    h_code = highlight(c.code, lex, formatter)
+
+    if not c.stdout or bool(request.GET.get('recheck-status', False)):
+        r = requests.get('https://api.judge0.com/submissions/'+c.token)
+        data = json.loads(r.text)
+        if data['stderr']:
+            c.stdout = data['stderr']
+        else:
+            c.stdout = data['stdout']
+        c.uptime = data['time']
+        c.save()
+    return render(request,'code/test.html',{'code_object':c, 'data':data, 'h_code':h_code})

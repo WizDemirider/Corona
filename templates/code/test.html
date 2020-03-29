@@ -1,10 +1,22 @@
-<h2> Hello! You entered: </h2>
-{{ lang }}
-<br>
-{{ code }}
-<br>
-{{ ip }}
-<br>
-{{ pub }}
-<br>
-<a href = "{% url 'home' %}"> Back Home:
+{% extends 'base.html' %}
+
+{% block title %}Code Output{% endblock %}
+
+{% block body %}
+
+<h2>See Your Code</h2>
+<p>
+Language:<br>{{ code_object.language }}
+</p><p>
+Code:<br>{{ h_code|safe }}
+</p><p>
+Input:<br>{{ code_object.stdin }}
+</p><p>
+Output:<br>{{ code_object.stdout }}
+</p><p>
+<h2>Compiler Response Status</h2>
+{{ data.status }}
+</p>
+<a class="btn btn-danger" href="{{request.path}}?recheck-status=True">Recheck Status</a>
+{% endblock %}
+

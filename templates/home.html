@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block body %}
+
+<h2> Recently uploaded codes in the world:</h2>
+<br>
+<ul>
+{% for code in codes %}
+  {% if code.is_public %}
+  <div class="card">
+    <div class="card-body">
+      <div class="card-title">
+        <h3>{{ code.owner.username }}
+        <small class="float-right text-muted">Time: {{ code.uptime }}s</small></h3>
+      </div>
+      <div class="border">
+        <p>{{ code.language }}</p>
+        {{code.h_code|safe}}
+        <div class="container pb-2">
+          <div class="row">
+            <div class="col">
+              <h3>Input</h3>
+              {{ code.stdin }}
+            </div>
+            <div class="col">
+              <h3>Output</h3>
+              {{ code.stdout }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}
+</ul>
+
+{% endblock %}
