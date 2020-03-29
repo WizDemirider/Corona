@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<h2>Let's Code!!</h2>
+
+<form method="POST" action="{% url 'test' %}">
+{% csrf_token %}
+
+    <div class="form-group">
+      <label for="lang">Programming Language:</label>
+      <select id="lang" name="language">
+        <option value="C">C</option>
+        <option value="C++">C++</option>
+        <option value="Java">Java</option>
+        <option value="Python">Python</option>
+      </select>
+      <br>
+      <br>
+            <label for="code">Code:</label><br>
+          <textarea class="form-control"  rows="20" cols="50"  id="code" name = "code">Enter your code here</textarea><br>
+          <label for="input">Input:</label><br>
+
+          <textarea class="form-control"  rows="3" id="ipnut" name = "input">Any inputs?</textarea><br>
+
+  <p>Would you like your code to be seen by the public? </p>
+  <input type="radio" id="Y" name="is_public" value="True">
+  <label for="Y">Yes</label><br>
+  <input type="radio" id="N" name="is_public" value="False">
+  <label for="N">No</label><br>
+  <p>Enter the email address where you'll like to know the result of the code</p>
+  <input type = text name = "email" placeholder="Email Address"><br>
+    </div>
+          <button type="submit" class="btn btn-default">Submit</button>
+</form>
